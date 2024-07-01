@@ -17,6 +17,9 @@ Main author of TSL:
 - [Official announcement and introduction](https://github.com/mrdoob/three.js/wiki/Three.js-Shading-Language)
 - [Q&A](https://github.com/boytchev/tsl-textures/wiki/Q&A)
 - [Nodes list](https://github.com/mrdoob/three.js/blob/dev/examples/jsm/nodes/Nodes.js)
+- [Three.js WebGPU examples](https://threejs.org/examples/?q=webgpu#webgpu_parallax_uv)
+- [TSL => WGSL / GLSL](https://threejs.org/examples/?q=webgpu#webgpu_tsl_editor)
+- [GLSL => TSL](https://threejs.org/examples/?q=webgpu#webgpu_tsl_transpiler)
 
 ## Use the template
 
