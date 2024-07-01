@@ -1,0 +1,19 @@
+{
+  "name": "threejs-journey-exercise",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build"
+  },
+  "devDependencies": {
+    "vite": "^5.2.10",
+    "vite-plugin-restart": "^0.4.0"
+  },
+  "dependencies": {
+    "lil-gui": "^0.19.2",
+    "three": "^0.164.1",
+    "vite-plugin-top-level-await": "^1.4.1"
+  }
+}
