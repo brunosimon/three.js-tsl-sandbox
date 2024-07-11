@@ -20,6 +20,7 @@ Main author of TSL:
 - [Three.js WebGPU examples](https://threejs.org/examples/?q=webgpu#webgpu_parallax_uv)
 - [TSL => WGSL / GLSL](https://threejs.org/examples/?q=webgpu#webgpu_tsl_editor)
 - [GLSL => TSL](https://threejs.org/examples/?q=webgpu#webgpu_tsl_transpiler)
+- [TSL textures](https://github.com/boytchev/tsl-textures) ([demos](https://boytchev.github.io/tsl-textures/))
 
 ## Use the template
 
