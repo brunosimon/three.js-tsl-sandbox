@@ -2,9 +2,8 @@ import GUI from 'lil-gui'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
-import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js'
-import { If, MeshBasicNodeMaterial, PointsNodeMaterial, SpriteNodeMaterial, add, cameraPosition, clamp, color, cond, cos, distance, float, frontFacing, hash, length, mat2, min, mix, modelViewMatrix, modelWorldMatrix, mul, negate, normalView, normalWorld, positionLocal, positionWorld, range, sin, smoothstep, step, texture, timerGlobal, tslFn, uniform, uv, varying, vec2, vec3, vec4 } from 'three/examples/jsm/nodes/Nodes.js'
-import WebGPURenderer from 'three/examples/jsm/renderers/webgpu/WebGPURenderer.js'
+import { WebGPURenderer, MeshBasicNodeMaterial, skinning, add, color, hash, mix, modelWorldMatrix, normalView, positionLocal, positionWorld, sin, timerGlobal, tslFn, uniform, vec3, vec4 } from 'three/tsl'
+// import WebGPURenderer from 'three/examples/jsm/renderers/webgpu/WebGPURenderer.js'
 
 /**
  * Base
@@ -97,19 +96,34 @@ const sphere = new THREE.Mesh(
 sphere.position.x = - 3
 scene.add(sphere)
 
-// Suzanne
-let suzanne = null
+// Model
+let model
+let mixer
 gltfLoader.load(
     './suzanne.glb',
     (gltf) =>
     {
-        suzanne = gltf.scene
-        suzanne.traverse((child) =>
+        model = gltf.scene
+        // model.scale.setScalar( 1.75 );
+        // model.rotation.y = Math.PI;
+        // model.position.y = - 1.5;
+
+        // mixer = new THREE.AnimationMixer(model)
+        // const action = mixer.clipAction(gltf.animations[0])
+        // action.play()
+
+        model.traverse((child) =>
         {
             if(child.isMesh)
+            {
+                // const skinningMaterial = material.clone()
+                // skinningMaterial.positionNode = skinning(child)
+                // child.material = skinningMaterial
+                
                 child.material = material
+            }
         })
-        scene.add(suzanne)
+        scene.add(model)
     }
 )
 
@@ -179,7 +193,12 @@ const clock = new THREE.Clock()
 
 const tick = () =>
 {
-    const elapsedTime = clock.getElapsedTime()
+    const deltaTime = clock.getDelta()
+
+    // if ( typeof mixer !== 'undefined' )
+    // {
+    //     mixer.update( deltaTime );
+    // }
 
     // Update controls
     controls.update()

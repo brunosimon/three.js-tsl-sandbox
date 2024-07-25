@@ -1,11 +1,8 @@
 import GUI from 'lil-gui'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
-import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js'
-import { MeshBasicNodeMaterial, PointsNodeMaterial, SpriteNodeMaterial, clamp, color, cos, distance, float, hash, length, mix, positionLocal, range, sin, smoothstep, step, timerGlobal, tslFn, uniform, uv, vec3, vec4 } from 'three/examples/jsm/nodes/Nodes.js'
+import { SpriteNodeMaterial, color, cos, float, mix, range, sin, timerGlobal, uniform, uv, vec3, vec4 } from 'three/examples/jsm/nodes/Nodes.js'
 import WebGPURenderer from 'three/examples/jsm/renderers/webgpu/WebGPURenderer.js'
-import { perlinNoise3d } from './tsl/perlinNoise3d.js'
 
 /**
  * Base
@@ -139,8 +136,6 @@ const clock = new THREE.Clock()
 
 const tick = () =>
 {
-    const elapsedTime = clock.getElapsedTime()
-
     // Update controls
     controls.update()
 
