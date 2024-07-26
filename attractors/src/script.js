@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import GUI from 'lil-gui'
-import { If, PI, SpriteNodeMaterial, color, cos, float, hash, instanceIndex, loop, max, min, mix, mod, sin, storage, timerDelta, tslFn, uint, uniform, uniforms, vec3, vec4 } from 'three/src/nodes/Nodes.js'
+import { If, PI, SpriteNodeMaterial, color, cos, instanceIndex, loop, mix, mod, sin, storage, timerDelta, tslFn, uint, uniform, uniforms, vec3, vec4 } from 'three/src/nodes/Nodes.js'
 import StorageInstancedBufferAttribute from 'three/src/renderers/common/StorageInstancedBufferAttribute.js'
 import WebGPURenderer from 'three/src/renderers/webgpu/WebGPURenderer.js'
 import { TransformControls } from 'three/addons/controls/TransformControls.js'

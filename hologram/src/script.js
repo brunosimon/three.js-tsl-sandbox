@@ -2,7 +2,7 @@ import GUI from 'lil-gui'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
-import { WebGPURenderer, MeshBasicNodeMaterial, skinning, add, color, hash, mix, modelWorldMatrix, normalView, positionLocal, positionWorld, sin, timerGlobal, tslFn, uniform, vec3, vec4 } from 'three/tsl'
+import { modelViewMatrix, cameraProjectionMatrix, WebGPURenderer, MeshBasicNodeMaterial, skinning, add, color, hash, mix, modelWorldMatrix, normalView, positionLocal, positionWorld, sin, timerGlobal, tslFn, uniform, vec3, vec4, cameraViewMatrix, varying } from 'three/tsl'
 // import WebGPURenderer from 'three/examples/jsm/renderers/webgpu/WebGPURenderer.js'
 
 /**
@@ -34,24 +34,28 @@ const material = new MeshBasicNodeMaterial({
 })
 
 // Position
-const worldPosition = modelWorldMatrix.mul(positionLocal)
+const glitchStrength = varying(0)
 
-const glitchTime = timerGlobal().sub(worldPosition.y.mul(0.5))
-const glitch = add(
-    sin(glitchTime),
-    sin(glitchTime.mul(3.45)),
-    sin(glitchTime.mul(8.76))
-).div(3).smoothstep(0.3, 1)
+material.vertexNode = tslFn(() =>
+{
+    const glitchTime = timerGlobal().sub(positionWorld.y.mul(0.5))
+    
+    glitchStrength.assign(add(
+        sin(glitchTime),
+        sin(glitchTime.mul(3.45)),
+        sin(glitchTime.mul(8.76))
+    ).div(3).smoothstep(0.3, 1))
 
-const glitchOffset = vec3(
-    hash(worldPosition.xz.abs().mul(9999)).sub(0.5),
-    0,
-    hash(worldPosition.yx.abs().mul(9999)).sub(0.5),
-).mul(glitch.mul(0.5))
+    const glitch = vec3(
+        hash(positionWorld.xz.abs().mul(9999)).sub(0.5),
+        0,
+        hash(positionWorld.yx.abs().mul(9999)).sub(0.5),
+    )
 
-const position = positionLocal.add(glitchOffset)
+    positionWorld.xyz.addAssign(glitch.mul(glitchStrength.mul(0.5)))
 
-material.positionNode = position
+    return cameraProjectionMatrix.mul(cameraViewMatrix).mul(positionWorld);
+})()
 
 // Color
 const colorInside = uniform(color('#ff6088'))
@@ -59,14 +63,12 @@ const colorOutside = uniform(color('#4d55ff'))
 
 material.colorNode = tslFn(() =>
 {
-    const position = positionWorld
-
-    const stripes = position.y.sub(timerGlobal(0.02)).mul(20).mod(1).pow(3)
+    const stripes = positionWorld.y.sub(timerGlobal(0.02)).mul(20).mod(1).pow(3)
 
     const fresnel = normalView.dot(vec3(0, 0, 1)).abs().oneMinus()
     const falloff = fresnel.smoothstep(0.8, 0.2)
     const alpha = stripes.mul(fresnel).add(fresnel.mul(1.25)).mul(falloff)
-    const finalColor = mix(colorInside, colorOutside, fresnel.add(glitch.mul(0.6)))
+    const finalColor = mix(colorInside, colorOutside, fresnel.add(glitchStrength.mul(0.6)))
 
     return vec4(finalColor, alpha)
 })()
@@ -100,27 +102,27 @@ scene.add(sphere)
 let model
 let mixer
 gltfLoader.load(
-    './suzanne.glb',
+    './Soldier.glb',
     (gltf) =>
     {
         model = gltf.scene
-        // model.scale.setScalar( 1.75 );
-        // model.rotation.y = Math.PI;
-        // model.position.y = - 1.5;
+        model.scale.setScalar( 1.75 );
+        model.rotation.y = Math.PI;
+        model.position.y = - 1.5;
 
-        // mixer = new THREE.AnimationMixer(model)
-        // const action = mixer.clipAction(gltf.animations[0])
-        // action.play()
+        mixer = new THREE.AnimationMixer(model)
+        const action = mixer.clipAction(gltf.animations[0])
+        action.play()
 
         model.traverse((child) =>
         {
             if(child.isMesh)
             {
-                // const skinningMaterial = material.clone()
-                // skinningMaterial.positionNode = skinning(child)
-                // child.material = skinningMaterial
-                
-                child.material = material
+                const skinningMaterial = material.clone()
+                skinningMaterial.positionNode = positionLocal.add(vec3(3, 0, 0))
+                child.material = skinningMaterial
+
+                // child.material = material
             }
         })
         scene.add(model)
@@ -195,10 +197,10 @@ const tick = () =>
 {
     const deltaTime = clock.getDelta()
 
-    // if ( typeof mixer !== 'undefined' )
-    // {
-    //     mixer.update( deltaTime );
-    // }
+    if ( typeof mixer !== 'undefined' )
+    {
+        mixer.update( deltaTime );
+    }
 
     // Update controls
     controls.update()

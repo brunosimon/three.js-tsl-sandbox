@@ -1,6 +1,6 @@
 // Three.js Transpiler r165
 
-import { vec4, mod, tslFn, float, floor, overloadingFn, mul, sub, vec3, fract, abs, dot, vec2, step, clamp, max, If } from 'three/nodes';
+import { vec4, mod, tslFn, float, floor, overloadingFn, mul, sub, vec3, fract, abs, dot, vec2, step, clamp, max, If } from 'three/tsl';
 
 const permute_0 = tslFn( ( [ x_immutable ] ) => {
 

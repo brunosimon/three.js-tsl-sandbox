@@ -1,7 +1,7 @@
 import GUI from 'lil-gui'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
-import { MeshBasicNodeMaterial, PI, PI2, color, dot, positionLocal, rangeFog, sin, step, texture, timerGlobal, tslFn, uv, vec2, vec3, vec4 } from 'three/examples/jsm/nodes/Nodes.js'
+import { MeshBasicNodeMaterial, PI2, color, dot, rangeFog, sin, step, texture, timerGlobal, tslFn, uv, vec2, vec3, vec4 } from 'three/examples/jsm/nodes/Nodes.js'
 import WebGPURenderer from 'three/examples/jsm/renderers/webgpu/WebGPURenderer.js'
 import gridMaterial from './GridMaterial'
 

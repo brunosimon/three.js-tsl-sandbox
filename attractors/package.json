@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "lil-gui": "^0.19.2",
-    "three": "github:mrdoob/three.js#dev",
+    "three": "^0.167.0",
     "vercel": "^34.3.1",
     "vite-plugin-top-level-await": "^1.4.1"
   }

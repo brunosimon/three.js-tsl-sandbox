@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "lil-gui": "^0.19.2",
-    "three": "^0.165.0",
+    "three": "github:mrdoob/three.js#dev",
     "vite-plugin-top-level-await": "^1.4.1"
   }
 }
