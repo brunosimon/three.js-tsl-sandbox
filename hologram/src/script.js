@@ -3,7 +3,6 @@ import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { modelViewMatrix, cameraProjectionMatrix, WebGPURenderer, MeshBasicNodeMaterial, skinning, add, color, hash, mix, modelWorldMatrix, normalView, positionLocal, positionWorld, sin, timerGlobal, tslFn, uniform, vec3, vec4, cameraViewMatrix, varying } from 'three/tsl'
-// import WebGPURenderer from 'three/examples/jsm/renderers/webgpu/WebGPURenderer.js'
 
 /**
  * Base
@@ -119,7 +118,7 @@ gltfLoader.load(
             if(child.isMesh)
             {
                 const skinningMaterial = material.clone()
-                skinningMaterial.positionNode = positionLocal.add(vec3(3, 0, 0))
+                skinningMaterial.positionNode = skinning(child)
                 child.material = skinningMaterial
 
                 // child.material = material
