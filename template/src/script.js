@@ -1,8 +1,7 @@
-import * as THREE from 'three'
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
+import * as THREE from 'three/webgpu'
+import { positionLocal, vec4 } from 'three/webgpu'
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import GUI from 'lil-gui'
-import WebGPURenderer from 'three/examples/jsm/renderers/webgpu/WebGPURenderer.js'
-import { MeshStandardNodeMaterial, positionLocal, vec4 } from 'three/examples/jsm/nodes/Nodes.js'
 
 /**
  * Base
@@ -22,7 +21,7 @@ const textureLoader = new THREE.TextureLoader()
 /**
  * Test
  */
-const material = new MeshStandardNodeMaterial()
+const material = new THREE.MeshStandardNodeMaterial()
 
 material.positionNode = positionLocal
 material.colorNode = vec4(positionLocal.y, 0, 1, 1)
@@ -81,7 +80,7 @@ controls.enableDamping = true
 /**
  * Renderer
  */
-const renderer = new WebGPURenderer({
+const renderer = new THREE.WebGPURenderer({
     canvas: canvas,
     antialias: true
 })
