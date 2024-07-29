@@ -1,13 +1,10 @@
-import * as THREE from 'three'
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
-import GUI from 'lil-gui'
-import WebGPURenderer from 'three/examples/jsm/renderers/webgpu/WebGPURenderer.js'
+import * as THREE from 'three/webgpu'
+import { mx_noise_float, color, float, mix, smoothstep, storage, tslFn, uniform, uv, varying, vec3, vec4 } from 'three/webgpu'
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js'
-import { MeshStandardNodeMaterial, SpriteNodeMaterial, color, cos, float, instanceIndex, mix, positionLocal, smoothstep, storage, tslFn, uniform, uv, varying, vec3, vec4 } from 'three/examples/jsm/nodes/Nodes.js'
-import StorageInstancedBufferAttribute from 'three/examples/jsm/renderers/common/StorageInstancedBufferAttribute.js'
+import GUI from 'lil-gui'
 import gsap from 'gsap'
-import { simplexNoise3d } from './tsl/simplexNoise3d.js'
 
 /**
  * Base
@@ -70,58 +67,59 @@ gltfLoader.load('./models.glb', (gltf) =>
             }
         }
 
-        particles.positions.push(storage(new StorageInstancedBufferAttribute(newArray, 3), 'vec3', particles.maxCount).toAttribute())
+        particles.positions.push(storage(new THREE.StorageInstancedBufferAttribute(newArray, 3), 'vec3', particles.maxCount).toAttribute())
     }
 
     // Scale
     const scalesArray = new Float32Array(particles.maxCount)
     for(let i = 0; i < particles.maxCount; i++)
         scalesArray[i] = Math.random()
-    const scalesAttribute = storage(new StorageInstancedBufferAttribute(scalesArray, 1), 'float', particles.maxCount).toAttribute()
+    const scalesAttribute = storage(new THREE.StorageInstancedBufferAttribute(scalesArray, 1), 'float', particles.maxCount).toAttribute()
     
     /**
     * Material
     */
-    const material = new SpriteNodeMaterial({ transparent: true, depthWrite: false, blending: THREE.AdditiveBlending })
+    const material = new THREE.SpriteNodeMaterial({ transparent: true, depthWrite: false, blending: THREE.AdditiveBlending })
 
-    const colorOriginUniform = uniform(color('#6181ff'))
-    const colorTargetUniform = uniform(color('#ff8861'))
-    const progressUniform = uniform(0)
-    const noiseScaleUniform = uniform(0.2)
-    const transitionRatioUniform = uniform(0.4)
-    const scaleUniform = uniform(0.4)
+    const colorOrigin = uniform(color('#6181ff'))
+    const colorTarget = uniform(color('#ff8861'))
+    const progress = uniform(0)
+    const noiseScale = uniform(0.4)
+    const transitionRatio = uniform(0.4)
+    const scale = uniform(0.4)
+
+    const particleColor = varying(vec3())
 
     // Mixed position
     const getMixedPosition = tslFn(([origin, target]) =>
     {
         // Noises
-        const noiseOrigin = simplexNoise3d(vec3(origin.mul(noiseScaleUniform)))
-        const noiseTarget = simplexNoise3d(vec3(target.mul(noiseScaleUniform)))
-        const noise = mix(noiseOrigin, noiseTarget, progressUniform).smoothstep(-1, 1)
+        const noiseOrigin = mx_noise_float(vec3(origin.mul(noiseScale)), 1, 0).mul(1.5)
+        const noiseTarget = mx_noise_float(vec3(target.mul(noiseScale)), 1, 0).mul(1.5)
+        const noise = mix(noiseOrigin, noiseTarget, progress).smoothstep(-1, 1)
 
         // Transition
-        const duration = transitionRatioUniform
+        const duration = transitionRatio
         const delay = duration.oneMinus().mul(noise)
         const end = delay.add(duration)
-        const progress = smoothstep(delay, end, progressUniform)
+        const smoothedProgress = smoothstep(delay, end, progress)
 
         // Color varying
-        const colorVarying = varying(vec3(), 'colorVarying').assign(mix(colorOriginUniform, colorTargetUniform, noise))
+        particleColor.assign(mix(colorOrigin, colorTarget, noise))
 
         // Output
-        return mix(origin, target, progress)
+        return mix(origin, target, smoothedProgress)
     })
     material.positionNode = getMixedPosition(particles.positions[0], particles.positions[1])
 
     // Scale
-    material.scaleNode = scalesAttribute.mul(scaleUniform)
+    material.scaleNode = scalesAttribute.mul(scale)
 
     // Color
     material.colorNode = tslFn(() =>
     {
-        const colorVarying = varying(vec3(), 'colorVarying')
         const intensity = float(0.05).div(uv().sub(0.5).length()).sub(0.1)
-        return vec4(colorVarying.mul(intensity.pow(2)), 1)
+        return vec4(particleColor.mul(intensity.pow(2)), 1)
     })()
 
     /**
@@ -140,7 +138,7 @@ gltfLoader.load('./models.glb', (gltf) =>
 
         // Animate uProgress
         gsap.fromTo(
-            progressUniform,
+            progress,
             { value: 0 },
             { value: 1, duration: 3, ease: 'linear' }
         )
@@ -157,17 +155,17 @@ gltfLoader.load('./models.glb', (gltf) =>
     /**
     * Debug
     */
-    gui.addColor({ color: colorOriginUniform.value.getHexString(THREE.SRGBColorSpace) }, 'color').onChange((value) => { colorOriginUniform.value.set(value) }).name('colorOrigin')
-    gui.addColor({ color: colorTargetUniform.value.getHexString(THREE.SRGBColorSpace) }, 'color').onChange((value) => { colorTargetUniform.value.set(value) }).name('colorTarget')
-    gui.add(progressUniform, 'value', 0, 1, 0.01).name('progress')
-    gui.add(noiseScaleUniform, 'value', 0, 1, 0.01).name('noiseScale')
-    gui.add(transitionRatioUniform, 'value', 0, 1, 0.01).name('transitionRatio')
-    gui.add(scaleUniform, 'value', 0, 1, 0.01).name('scaleUniform')
+    gui.addColor({ color: colorOrigin.value.getHexString(THREE.SRGBColorSpace) }, 'color').onChange((value) => { colorOrigin.value.set(value) }).name('colorOrigin')
+    gui.addColor({ color: colorTarget.value.getHexString(THREE.SRGBColorSpace) }, 'color').onChange((value) => { colorTarget.value.set(value) }).name('colorTarget')
+    gui.add(progress, 'value', 0, 1, 0.01).name('progress')
+    gui.add(noiseScale, 'value', 0, 1, 0.01).name('noiseScale')
+    gui.add(transitionRatio, 'value', 0, 1, 0.01).name('transitionRatio')
+    gui.add(scale, 'value', 0, 1, 0.01).name('scale')
 
-    gui.add(particles, 'morph0')
-    gui.add(particles, 'morph1')
-    gui.add(particles, 'morph2')
-    gui.add(particles, 'morph3')
+    gui.add(particles, 'morph0').name('torus')
+    gui.add(particles, 'morph1').name('suzanne')
+    gui.add(particles, 'morph2').name('sphere')
+    gui.add(particles, 'morph3').name('three.js')
 })
 
 /**
@@ -220,12 +218,12 @@ controls.enableDamping = true
 /**
  * Renderer
  */
-const renderer = new WebGPURenderer({
+const renderer = new THREE.WebGPURenderer({
     canvas: canvas
 })
 renderer.setSize(sizes.width, sizes.height)
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
-renderer.setClearColor('#000000')
+renderer.setClearColor('#111111')
 
 /**
  * Animate

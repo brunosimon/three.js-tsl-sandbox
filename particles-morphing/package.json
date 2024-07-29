@@ -14,7 +14,7 @@
   "dependencies": {
     "gsap": "^3.12.5",
     "lil-gui": "^0.19.2",
-    "three": "^0.165.0",
+    "three": "^0.167.0",
     "vite-plugin-top-level-await": "^1.4.1"
   }
 }

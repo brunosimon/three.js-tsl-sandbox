@@ -1,11 +1,10 @@
-import * as THREE from 'three'
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
+import * as THREE from 'three/webgpu'
 import GUI from 'lil-gui'
-import WebGPURenderer from 'three/examples/jsm/renderers/webgpu/WebGPURenderer.js'
-import { If, MeshPhysicalNodeMaterial, PI2, atan2, cameraFar, cameraNear, color, frontFacing, output, perspectiveDepthToViewZ, positionLocal, positionView, tslFn, uniform, vec3, vec4, viewZToPerspectiveDepth } from 'three/examples/jsm/nodes/Nodes.js'
+import { If, PI2, atan2, color, frontFacing, output, positionLocal, tslFn, uniform, vec4 } from 'three/webgpu'
 import { RGBELoader } from 'three/addons/loaders/RGBELoader.js'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js'
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 
 /**
  * Base
@@ -29,13 +28,13 @@ gltfLoader.setDRACOLoader(dracoLoader)
 /**
  * Material
  */
-const defaultMaterial = new MeshPhysicalNodeMaterial({
+const defaultMaterial = new THREE.MeshPhysicalNodeMaterial({
     metalness: 0.5,
     roughness: 0.25,
     envMapIntensity: 0.5,
     color: '#858080'
 })
-const slicedMaterial = new MeshPhysicalNodeMaterial({
+const slicedMaterial = new THREE.MeshPhysicalNodeMaterial({
     metalness: 0.5,
     roughness: 0.25,
     envMapIntensity: 0.5,
@@ -48,9 +47,8 @@ const sliceStart = uniform(1.75)
 const sliceArc = uniform(1.25)
 const sliceColor = uniform(color('#b62f58'))
 
-const inSlice = tslFn(() =>
+const inAngle = tslFn(() =>
 {
-    // Discard
     const angle = atan2(positionLocal.y, positionLocal.x).sub(sliceStart).mod(PI2)
     return angle.greaterThan(0).and(angle.lessThan(sliceArc))
 })
@@ -59,7 +57,7 @@ const inSlice = tslFn(() =>
 slicedMaterial.outputNode = tslFn(() =>
 {
     // Discard
-    inSlice().discard()
+    inAngle().discard()
 
     // Backface color
     const finalOutput = output
@@ -76,7 +74,7 @@ slicedMaterial.outputNode = tslFn(() =>
 slicedMaterial.shadowNode = tslFn(() =>
 {
     // Discard
-    inSlice().discard()
+    inAngle().discard()
 
     return vec4(0, 0, 0, 1)
 })()
@@ -191,7 +189,7 @@ controls.enableDamping = true
 /**
  * Renderer
  */
-const renderer = new WebGPURenderer({
+const renderer = new THREE.WebGPURenderer({
     canvas: canvas
 })
 renderer.shadowMap.type = THREE.PCFSoftShadowMap

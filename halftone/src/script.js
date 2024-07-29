@@ -1,10 +1,8 @@
+import * as THREE from 'three/webgpu'
+import { color, mix, normalWorld, output, tslFn, uniform, vec4, viewportCoordinate, viewportResolution } from 'three/webgpu'
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import GUI from 'lil-gui'
-import * as THREE from 'three'
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
-import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js'
-import { If, MeshStandardNodeMaterial, PointsNodeMaterial, SpriteNodeMaterial, add, cameraPosition, clamp, color, cond, cos, distance, float, frontFacing, hash, length, mat2, min, mix, modelViewMatrix, modelWorldMatrix, mul, negate, normalWorld, output, positionLocal, positionWorld, range, sin, smoothstep, step, texture, timerGlobal, tslFn, uniform, uv, varying, vec2, vec3, vec4, viewportCoordinate, viewportResolution, viewportTopLeft } from 'three/examples/jsm/nodes/Nodes.js'
-import WebGPURenderer from 'three/examples/jsm/renderers/webgpu/WebGPURenderer.js'
 
 /**
  * Base
@@ -27,7 +25,7 @@ const gltfLoader = new GLTFLoader()
 /**
  * Material
  */
-const material = new MeshStandardNodeMaterial({ color: '#ff822e' })
+const material = new THREE.MeshStandardNodeMaterial({ color: '#ff822e' })
 gui.addColor({ color: material.color.getHexString(THREE.SRGBColorSpace) }, 'color').onChange((value) => { material.color.set(value) })
 
 // Setup
@@ -190,9 +188,6 @@ window.addEventListener('resize', () =>
     // Update renderer
     renderer.setSize(sizes.width, sizes.height)
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
-
-    // // Update fireflies
-    // firefliesMaterial.uniforms.uPixelRatio.value = Math.min(window.devicePixelRatio, 2)
 })
 
 /**
@@ -212,7 +207,7 @@ controls.enableDamping = true
 /**
  * Renderer
  */
-const renderer = new WebGPURenderer({
+const renderer = new THREE.WebGPURenderer({
     canvas: canvas,
     antialias: true
 })

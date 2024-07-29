@@ -1,11 +1,10 @@
-import * as THREE from 'three'
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
+import * as THREE from 'three/webgpu'
+import { float, /*depthTexture, viewportDepthTexture,*/ sqrt, vec2, vec3, vec4, viewportResolution, viewportSharedTexture, viewportTopLeft, range, tslFn, instanceIndex, modelWorldMatrix, cameraProjectionMatrix, cameraFar, uv, step, max, uniform, color, cameraNear, positionLocal, modelViewMatrix, timerGlobal, sin } from 'three/webgpu'
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js'
+import { Timer } from 'three/addons/Addons.js'
 import GUI from 'lil-gui'
-import WebGPURenderer from 'three/examples/jsm/renderers/webgpu/WebGPURenderer.js'
-import { MeshBasicNodeMaterial, float, viewportDepthTexture, sqrt, vec2, vec3, vec4, viewportResolution, viewportSharedTexture, viewportTopLeft, depthTexture, SpriteNodeMaterial, range, tslFn, instanceIndex, modelWorldMatrix, cameraProjectionMatrix, cameraFar, uv, step, max, uniform, color, cameraNear, positionLocal, modelViewMatrix, timerGlobal, sin } from 'three/examples/jsm/nodes/Nodes.js'
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
-import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js'
-import { Timer } from 'three/examples/jsm/Addons.js'
 
 /**
  * Base
@@ -40,7 +39,7 @@ bakedTexture.colorSpace = THREE.SRGBColorSpace
 /**
  * Fireflies
  */
-const firefliesMaterial = new SpriteNodeMaterial({ transparent: true, depthWrite: false })
+const firefliesMaterial = new THREE.SpriteNodeMaterial({ transparent: true, depthWrite: false })
 
 const firefliesColor = uniform(color('#ffdb9e'))
 gui.addColor({ color: firefliesColor.value.getHexString(THREE.SRGBColorSpace) }, 'color').onChange(value => firefliesColor.value.set(value))
@@ -69,12 +68,12 @@ const customLinearDepth = modelViewProjection.w.varying().sub(cameraNear).div(ca
 
 firefliesMaterial.backdropNode = viewportSharedTexture(viewportTopLeft.xy)
 
-firefliesMaterial.backdropAlphaNode = tslFn(() =>
-{
-    const relativeDepth = depthTexture(viewportDepthTexture()).sub(customLinearDepth)
-    const depthAlpha = relativeDepth.smoothstep(0, 0.002)
-    return depthAlpha.oneMinus()
-})()
+// firefliesMaterial.backdropAlphaNode = tslFn(() =>
+// {
+//     const relativeDepth = depthTexture(viewportDepthTexture()).sub(customLinearDepth)
+//     const depthAlpha = relativeDepth.smoothstep(0, 0.002)
+//     return depthAlpha.oneMinus()
+// })()
 
 firefliesMaterial.colorNode = tslFn(() =>
 {
@@ -96,7 +95,7 @@ scene.add(fireflies)
 /**
  * Portal
  */
-const portalMaterial = new MeshBasicNodeMaterial({ side: THREE.DoubleSide, transparent: true })
+const portalMaterial = new THREE.MeshBasicNodeMaterial({ side: THREE.DoubleSide, transparent: true })
 
 // Sobel
 // From: https://gist.github.com/Hebali/6ebfc66106459aacee6a9fac029d0115
@@ -200,7 +199,7 @@ controls.enableDamping = true
 /**
  * Renderer
  */
-const renderer = new WebGPURenderer({
+const renderer = new THREE.WebGPURenderer({
     canvas: canvas
 })
 renderer.setSize(sizes.width, sizes.height)

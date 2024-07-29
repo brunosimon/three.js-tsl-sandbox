@@ -1,12 +1,9 @@
-import * as THREE from 'three'
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
-import GUI from 'lil-gui'
-import WebGPURenderer from 'three/examples/jsm/renderers/webgpu/WebGPURenderer.js'
-import { MeshStandardNodeMaterial, color, cross, dot, float, modelNormalMatrix, positionLocal, sign, smoothstep, step, timerGlobal, tslFn, uniform, varying, varyingProperty, vec2, vec3, vec4 } from 'three/examples/jsm/nodes/Nodes.js'
-import { RGBELoader } from 'three/examples/jsm/Addons.js'
+import * as THREE from 'three/webgpu'
+import { max, uv, mx_noise_float, color, cross, dot, float, modelNormalMatrix, positionLocal, sign, smoothstep, step, tslFn, uniform, varyingProperty, vec2, vec3, loop } from 'three/webgpu'
+import { RGBELoader } from 'three/addons/loaders/RGBELoader.js'
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { Brush, Evaluator, SUBTRACTION } from 'three-bvh-csg'
-import { simplexNoise2d } from './tsl/simplexNoise2d.js'
-import { loop } from 'three/examples/jsm/nodes/Nodes.js'
+import GUI from 'lil-gui'
 
 /**
  * Base
@@ -94,11 +91,25 @@ window.addEventListener('pointerup', (event) =>
     cursor.object.scale.setScalar(1)
 })
 
+// /**
+//  * Test
+//  */
+// const mesh = new THREE.Mesh(
+//     new THREE.PlaneGeometry(2, 2),
+//     new THREE.MeshBasicNodeMaterial()
+// )
+// mesh.rotation.y = - Math.PI * 0.5
+// mesh.position.y = 2
+// scene.add(mesh)
+
+// const test = max(0, mx_noise_float(uv().mul(5), 1, 0))
+// mesh.material.outputNode = THREE.vec4(vec3(test), 1)
+
 /**
  * Terrain
  */
 // Material
-const material = new MeshStandardNodeMaterial({
+const material = new THREE.MeshStandardNodeMaterial({
     metalness: 0,
     roughness: 0.5,
     color: '#85d534'
@@ -106,10 +117,10 @@ const material = new MeshStandardNodeMaterial({
 
 // Uniforms
 const noiseIterations = uniform(3)
-const positionFrequency = uniform(0.125)
-const warpFrequency = uniform(5.5)
-const warpStrength = uniform(0.75)
-const strength = uniform(4)
+const positionFrequency = uniform(0.15)
+const warpFrequency = uniform(9)
+const warpStrength = uniform(1)
+const strength = uniform(10)
 const offset = uniform(vec2(0, 0))
 const neighboursShift = uniform(0.01)
 
@@ -128,13 +139,13 @@ const vPosition = varyingProperty('vec3')
 const getElevation = tslFn(([position]) =>
 {
     const warpedPosition = position.add(offset)
-    warpedPosition.addAssign(simplexNoise2d(warpedPosition.mul(positionFrequency).mul(warpFrequency)).mul(warpStrength))
+    warpedPosition.addAssign(mx_noise_float(warpedPosition.mul(positionFrequency).mul(warpFrequency), 1, 0).mul(warpStrength))
     
     const elevation = float(0).toVar()
     loop({ type: 'float', start: 1, end: noiseIterations, condition: '<=' }, ({ i }) =>
     {
         const noiseInput = warpedPosition.mul(positionFrequency).mul(i.mul(2)).add(i.mul(987))
-        const noise = simplexNoise2d(noiseInput).div(i.add(1).mul(2))
+        const noise = mx_noise_float(noiseInput, 1, 0).div(i.add(1).mul(2))
         elevation.addAssign(noise)
     })
 
@@ -196,7 +207,7 @@ material.colorNode = tslFn(() =>
     finalColor.assign(rockMix.mix(finalColor, colorRock))
 
     // Snow
-    const snowThreshold = simplexNoise2d(vPosition.xz.mul(15)).mul(0.1).add(0.45)
+    const snowThreshold = mx_noise_float(vPosition.xz.mul(25), 1, 0).mul(0.1).add(0.45)
     const snowMix = step(snowThreshold, vPosition.y);
     finalColor.assign(snowMix.mix(finalColor, colorSnow))
 
@@ -219,7 +230,7 @@ scene.add(terrain)
 const terrainFolder = gui.addFolder('🏔️ terrain')
 terrainFolder.add(noiseIterations, 'value', 0, 10, 1).name('noiseIterations')
 terrainFolder.add(positionFrequency, 'value', 0, 1, 0.001).name('positionFrequency')
-terrainFolder.add(strength, 'value', 0, 10, 0.001).name('strength')
+terrainFolder.add(strength, 'value', 0, 20, 0.001).name('strength')
 terrainFolder.add(warpFrequency, 'value', 0, 10, 0.001).name('warpFrequency')
 terrainFolder.add(warpStrength, 'value', 0, 1, 0.001).name('warpStrength')
 
@@ -320,9 +331,10 @@ controls.enableDamping = true
 /**
  * Renderer
  */
-const renderer = new WebGPURenderer({
+const renderer = new THREE.WebGPURenderer({
     canvas: canvas
 })
+renderer.shadowMap.type = THREE.PCFSoftShadowMap
 renderer.toneMapping = THREE.ACESFilmicToneMapping
 renderer.setSize(sizes.width, sizes.height)
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))

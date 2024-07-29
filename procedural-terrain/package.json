@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "lil-gui": "^0.19.2",
-    "three": "^0.165.0",
+    "three": "^0.167.0",
     "three-bvh-csg": "^0.0.16",
     "vite-plugin-top-level-await": "^1.4.1"
   }

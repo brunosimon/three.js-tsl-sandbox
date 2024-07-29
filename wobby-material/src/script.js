@@ -1,11 +1,11 @@
-import * as THREE from 'three'
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
+import * as THREE from 'three/webgpu'
 import GUI from 'lil-gui'
-import { WebGPURenderer, MeshPhysicalNodeMaterial, color, cross, getRoughness, materialMetalness, materialRoughness, mix, modelNormalMatrix, normalLocal, normalWorld, positionLocal, roughness, sin, smoothstep, tangentLocal, timerGlobal, tslFn, uniform, varyingProperty, vec3, vec4 } from 'three/tsl'
+import { mx_noise_float, MeshPhysicalNodeMaterial, color, cross, getRoughness, materialMetalness, materialRoughness, mix, modelNormalMatrix, normalLocal, normalWorld, positionLocal, roughness, sin, smoothstep, tangentLocal, timerGlobal, tslFn, uniform, varyingProperty, vec3, vec4 } from 'three/webgpu'
 import { RGBELoader } from 'three/addons/loaders/RGBELoader.js'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js'
-import { mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
+import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js'
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { simplexNoise4d } from './tsl/simplexNoise4d.js'
 
 /**
@@ -47,7 +47,7 @@ const warpStrength = uniform(1.7)
 const positionFrequency = uniform(0.5)
 const timeFrequency = uniform(0.4)
 const strength = uniform(0.3)
-const neighboursShift = uniform(0.01)
+const normalComputeShift = uniform(0.01)
 const colorA = uniform(color('#0000ff'))
 const colorB = uniform(color('#ff0000'))
 
@@ -84,8 +84,8 @@ material.positionNode = tslFn(() =>
     const position = positionLocal.add(normalLocal.mul(wobble))
 
     // Neighbours
-    const neighbourA = positionLocal.add(tangentLocal.xyz.mul(neighboursShift))
-    const neighbourB = positionLocal.add(biTangent.mul(neighboursShift))
+    const neighbourA = positionLocal.add(tangentLocal.xyz.mul(normalComputeShift))
+    const neighbourB = positionLocal.add(biTangent.mul(normalComputeShift))
     neighbourA.addAssign(normalLocal.mul(getWobble(neighbourA)))
     neighbourB.addAssign(normalLocal.mul(getWobble(neighbourB)))
 
@@ -129,33 +129,33 @@ customPropertiesFolder.add(warpStrength, 'value', 0, 5, 0.001).name('warpStrengt
 customPropertiesFolder.add(positionFrequency, 'value', 0, 1, 0.001).name('positionFrequency')
 customPropertiesFolder.add(timeFrequency, 'value', 0, 1, 0.001).name('timeFrequency')
 customPropertiesFolder.add(strength, 'value', 0, 1, 0.001).name('strength')
-customPropertiesFolder.add(neighboursShift, 'value', 0.0001, 0.1, 0.0001).name('neighboursShift')
+customPropertiesFolder.add(normalComputeShift, 'value', 0.0001, 0.1, 0.0001).name('normalComputeShift')
 customPropertiesFolder.addColor({ color: colorA.value.getHexString(THREE.SRGBColorSpace) }, 'color').onChange((value) => { colorA.value.set(value) })
 customPropertiesFolder.addColor({ color: colorB.value.getHexString(THREE.SRGBColorSpace) }, 'color').onChange((value) => { colorB.value.set(value) })
 
 /**
  * Objects
  */
-// // Sphere
-// let geometry = new THREE.IcosahedronGeometry(2.5, 70)
-// geometry = mergeVertices(geometry)
-// geometry.computeTangents()
+// Sphere
+let geometry = new THREE.IcosahedronGeometry(2.5, 70)
+geometry = mergeVertices(geometry)
+geometry.computeTangents()
 
-// const wobble = new THREE.Mesh(geometry, material)
-// wobble.receiveShadow = true
-// wobble.castShadow = true
-// scene.add(wobble)
+const wobble = new THREE.Mesh(geometry, material)
+wobble.receiveShadow = true
+wobble.castShadow = true
+scene.add(wobble)
 
-// Model
-gltfLoader.load('./suzanne.glb', (gltf) =>
-{
-    const wobble = gltf.scene.children[0]
-    wobble.receiveShadow = true
-    wobble.castShadow = true
-    wobble.material = material
+// // Model
+// gltfLoader.load('./suzanne.glb', (gltf) =>
+// {
+//     const wobble = gltf.scene.children[0]
+//     wobble.receiveShadow = true
+//     wobble.castShadow = true
+//     wobble.material = material
 
-    scene.add(wobble)
-})
+//     scene.add(wobble)
+// })
 
 /**
  * Plane
@@ -230,10 +230,11 @@ controls.enableDamping = true
 /**
  * Renderer
  */
-const renderer = new WebGPURenderer({
+const renderer = new THREE.WebGPURenderer({
     canvas: canvas
 })
 renderer.toneMapping = THREE.ACESFilmicToneMapping
+renderer.shadowMap.type = THREE.PCFSoftShadowMap
 renderer.setSize(sizes.width, sizes.height)
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 renderer.setClearColor('#000000')
