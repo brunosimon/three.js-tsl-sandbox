@@ -1,18 +1,14 @@
 import GUI from 'lil-gui'
-import * as THREE from 'three'
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
-import { If, min, MeshBasicNodeMaterial, SpriteNodeMaterial, color, range, sin, instanceIndex, timerDelta, smoothstep, step, timerGlobal, tslFn, uniform, uv, vec3, vec4, positionWorld, vec2, normalWorld, mix, max, rangeFog, densityFog } from 'three/examples/jsm/nodes/Nodes.js'
-import WebGPURenderer from 'three/examples/jsm/renderers/webgpu/WebGPURenderer.js'
-import { storage } from 'three/examples/jsm/nodes/Nodes.js'
-import StorageInstancedBufferAttribute from 'three/examples/jsm/renderers/common/StorageInstancedBufferAttribute.js'
-import { simplexNoise4d } from './tsl/simplexNoise4d.js'
-import { GLTFLoader } from 'three/examples/jsm/Addons.js'
+import * as THREE from 'three/webgpu'
+import { float, clamp, smoothstep, min, uv, If, color, tslFn, uniform, vec3, vec4, positionWorld, vec2, normalWorld, mix, max, rangeFog } from 'three/webgpu'
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
+import MeshGridMaterial, { MeshGridMaterialLine } from './MeshGridMaterial.js'
 
 /**
  * Base
  */
 // Debug
-const debugObject = {}
 const gui = new GUI({
     width: 400
 })
@@ -22,6 +18,17 @@ const canvas = document.querySelector('canvas.webgl')
 
 // Scene
 const scene = new THREE.Scene()
+const fogColor = uniform(color('#1b191f'))
+const fogNode = rangeFog(fogColor, 20, 50)
+scene.fogNode = fogNode
+
+gui.add({ fog: true }, 'fog').onChange(value =>
+{
+    if(value)
+        scene.fogNode = fogNode
+    else
+        scene.fogNode = null
+})
 
 // Loaders
 const gltfLoader = new GLTFLoader()
@@ -66,167 +73,76 @@ controls.enableDamping = true
 /**
  * Renderer
  */
-const renderer = new WebGPURenderer({
+const renderer = new THREE.WebGPURenderer({
     canvas: canvas,
     antialias: true
 })
 renderer.setSize(sizes.width, sizes.height)
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
-renderer.setClearColor('#1b191f')
+renderer.setClearColor(fogColor.value)
 
-debugObject.clearColor = '#19191f'
-renderer.setClearColor(debugObject.clearColor)
+// Background color debug
+
 gui
-    .addColor(debugObject, 'clearColor')
-    .onChange(() =>
+    .addColor({ color: fogColor.value.getHexString(THREE.SRGBColorSpace) }, 'color')
+    .name('backgroundColor')
+    .onChange(value =>
     {
-        renderer.setClearColor(debugObject.clearColor)
+        renderer.setClearColor(value)
+        fogColor.value.set(value)
+        worldGridMaterial.color.set(value)
+        uvGridMaterial.color.set(value)
     })
-
-/**
- * Particles
- */
-const material = new SpriteNodeMaterial({ transparent: true, blending: THREE.AdditiveBlending, depthWrite: false })
-const count = 100
-
-const positionBuffer = storage(new StorageInstancedBufferAttribute(count, 3), 'vec3', count)
-const velocityBuffer = storage(new StorageInstancedBufferAttribute(count, 3), 'vec3', count)
-const lifeBuffer = storage(new StorageInstancedBufferAttribute(count, 1), 'float', count)
-
-// Compute init
-const particlesInit = tslFn(() =>
-{
-    // Position
-    const position = positionBuffer.element(instanceIndex)
-    position.assign(vec3(99999))
-
-    // Life
-    const life = lifeBuffer.element(instanceIndex)
-    life.assign(instanceIndex.hash())
-})
-const particlesInitCompute = particlesInit().compute(count)
-renderer.compute(particlesInitCompute)
-
-// Compute update
-const particlesUpdate = tslFn(() =>
-{
-    const position = positionBuffer.element(instanceIndex)
-    const velocity = velocityBuffer.element(instanceIndex)
-    const life = lifeBuffer.element(instanceIndex)
-
-    const delta = timerDelta()
-    const time = timerGlobal(0.2)
-
-    const noiseInput = position.mul(2)
-    const noise = vec3(
-        simplexNoise4d(vec4(noiseInput, time)),
-        simplexNoise4d(vec4(noiseInput.add(10, 10), time)),
-        simplexNoise4d(vec4(noiseInput.add(20, 20), time))
-    ).mul(delta).mul(1)
-
-    velocity.addAssign(noise)
-    position.addAssign(velocity.mul(delta))
-
-    const lifeDamper = delta.mul(0.3)
-    const newLife = life.add(lifeDamper)
-    If(newLife.greaterThan(1), () =>
-    {
-        position.assign(vec3(0))
-        velocity.assign(vec3(0))
-        newLife.assign(0)
-    })
-
-    life.assign(newLife)
-})
-const particlesUpdateCompute = particlesUpdate().compute(count)
-
-material.positionNode = positionBuffer.toAttribute()
-
-
-material.colorNode = tslFn(() =>
-{
-    uv().sub(0.5).length().greaterThan(0.5).discard()
-    return vec3(1)
-})()
-
-const life = lifeBuffer.toAttribute()
-const intro = life.remap(0, 0.2, 0, 1)
-const outro = life.remap(0.5, 1, 1, 0)
-const scale = min(intro, outro).smoothstep(0, 1).mul(0.05)
-
-material.scaleNode = scale
-
-// Mesh
-const geometry = new THREE.PlaneGeometry(1, 1)
-const mesh = new THREE.InstancedMesh(geometry, material, count)
-// scene.add(mesh)
 
 /**
  * Material
  */
-const projectedGridUv = tslFn(([ position, normal ]) =>
-{
-    const dotX = normal.dot(vec3(1, 0, 0)).abs()
-    const dotY = normal.dot(vec3(0, 1, 0)).abs()
-    const dotZ = normal.dot(vec3(0, 0, 1)).abs()
+const lines = [
+    new MeshGridMaterialLine('#444444', 0.1, 0.04),
+    new MeshGridMaterialLine('#705df2', 1, 0.02),
+    new MeshGridMaterialLine('#ffffff', 10, 0.002),
+]
 
-    const uvX = position.yz.toVar()
-    const uvY = position.xz.toVar()
-    const uvZ = position.xy.toVar()
-
-    const uv = uvX
-
-    If(dotZ.greaterThan(dotX), () =>
-    {
-        uv.assign(uvZ)
-    })
-    If(dotY.greaterThan(dotX).and(dotY.greaterThan(dotZ)), () =>
-    {
-        uv.assign(uvY)
-    })
-
-    return uv
+const worldGridMaterial = new MeshGridMaterial({
+    color: '#19191f',
+    scale: 1,
+    antialiased: true,
+    reference: 'worldTriplanar',
+    side: THREE.DoubleSide,
+    lines
 })
 
-const projectedGrid = tslFn(([scale, thickness, offset]) =>
-{
-    const uv = projectedGridUv(positionWorld, normalWorld).div(scale).add(thickness.mul(0.5)).add(offset).mod(1)
-    return max(
-        uv.x.step(thickness),
-        uv.y.step(thickness)
-    )
+const uvGridMaterial = new MeshGridMaterial({
+    color: '#19191f',
+    scale: 0.1,
+    antialiased: true,
+    reference: 'uv', // uv | world
+    side: THREE.DoubleSide,
+    lines
 })
 
-const scaleUniform = uniform(0.1)
-const thicknessUniform = uniform(0.1)
-const offsetUniform = uniform(vec2(0, 0))
-const colorBackUniform = uniform(color('#19191f'))
-const colorSmallUniform = uniform(color('#39364f'))
-const colorBigUniform = uniform(color('#705df2'))
+// Debug
 
-let finalColor = mix(
-    colorBackUniform,
-    colorSmallUniform,
-    projectedGrid(scaleUniform, thicknessUniform, offsetUniform)
-)
-finalColor = mix(
-    finalColor,
-    colorBigUniform,
-    projectedGrid(scaleUniform.mul(10), thicknessUniform.div(10), offsetUniform)
-)
+const gridFolder = gui.addFolder('grid')
+gridFolder.add(worldGridMaterial, 'scale', 0, 10, 0.001).name('scale')
+gridFolder.add({ antialiased: worldGridMaterial.antialiased }, 'antialiased').onChange(value =>
+{
+    worldGridMaterial.antialiased = value
+    uvGridMaterial.antialiased = value
 
-const gridMaterial = new MeshBasicNodeMaterial()
-gridMaterial.colorNode = vec4(finalColor, 1)
+    worldGridMaterial.needsUpdate = true
+    uvGridMaterial.needsUpdate = true
+})
 
-scene.fogNode = rangeFog(colorBackUniform, 5, 30)
-
-gui.add(scaleUniform, 'value', 0, 0.2, 0.001).name('scale')
-gui.add(thicknessUniform, 'value', 0, 1, 0.001).name('thickness')
-gui.add(offsetUniform.value, 'x', 0, 1, 0.001).name('offsetX')
-gui.add(offsetUniform.value, 'y', 0, 1, 0.001).name('offsetY')
-gui.addColor({ color: colorBackUniform.value.getHexString(THREE.SRGBColorSpace) }, 'color').onChange((value) => { colorBackUniform.value.set(value) }).name('colorBack')
-gui.addColor({ color: colorSmallUniform.value.getHexString(THREE.SRGBColorSpace) }, 'color').onChange((value) => { colorSmallUniform.value.set(value) }).name('colorSmall')
-gui.addColor({ color: colorBigUniform.value.getHexString(THREE.SRGBColorSpace) }, 'color').onChange((value) => { colorBigUniform.value.set(value) }).name('colorBig')
+for(const line of worldGridMaterial.lines)
+{
+    const lineGui = gridFolder.addFolder('line')
+    lineGui.add(line.scale, 'value', 0, 10, 0.001).name('scale')
+    lineGui.add(line.thickness, 'value', 0, 1, 0.001).name('thickness')
+    lineGui.add(line.offset.value, 'x', 0, 1, 0.001).name('offsetX')
+    lineGui.add(line.offset.value, 'y', 0, 1, 0.001).name('offsetY')
+    lineGui.addColor({ color: line.color.value.getHexString(THREE.SRGBColorSpace) }, 'color').onChange((value) => { line.color.value.set(value) }).name('colorBack')
+}
 
 /**
  * Objects
@@ -234,24 +150,24 @@ gui.addColor({ color: colorBigUniform.value.getHexString(THREE.SRGBColorSpace) }
 // Floor
 const floor = new THREE.Mesh(
     new THREE.PlaneGeometry(100, 100),
-    gridMaterial
+    worldGridMaterial
 )
 floor.rotation.x = - Math.PI * 0.5
 floor.position.y = - 1
 scene.add(floor)
 
 // Torus knot
-const torusKnot = new THREE.Mesh(
-    new THREE.TorusKnotGeometry(0.6, 0.25, 128, 32),
-    gridMaterial
+const plane = new THREE.Mesh(
+    new THREE.PlaneGeometry(2, 2),
+    uvGridMaterial
 )
-torusKnot.position.x = - 3
-scene.add(torusKnot)
+plane.position.x = - 3
+scene.add(plane)
 
 // Sphere
 const sphere = new THREE.Mesh(
     new THREE.SphereGeometry(1, 64, 64),
-    gridMaterial
+    worldGridMaterial
 )
 sphere.position.x = 3
 scene.add(sphere)
@@ -266,7 +182,7 @@ gltfLoader.load(
         suzanne.traverse((child) =>
         {
             if(child.isMesh)
-                child.material = gridMaterial
+                child.material = worldGridMaterial
         })
         scene.add(suzanne)
     }
@@ -284,8 +200,19 @@ const tick = () =>
     // Update controls
     controls.update()
 
+    // Update objects
+    if(suzanne)
+    {
+        plane.rotation.x = elapsedTime * 0.5
+        suzanne.rotation.x = elapsedTime * 0.5
+
+        plane.rotation.y = elapsedTime * 0.3
+        suzanne.rotation.y = elapsedTime * 0.3
+
+        sphere.position.y = Math.sin(elapsedTime)
+    }
+
     // Render
-    renderer.compute(particlesUpdateCompute)
     renderer.renderAsync(scene, camera)
 
     // Call tick again on the next frame

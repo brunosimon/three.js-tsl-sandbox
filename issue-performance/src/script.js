@@ -3,6 +3,7 @@ import * as THREE from 'three/webgpu'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { dot, cos, float, min, timerLocal, atan2, uniform, pass, bloom, PI, PI2, color, positionLocal, rangeFog, sin, texture, tslFn, uv, vec2, vec3, vec4 } from 'three/webgpu'
 import gridMaterial from './GridMaterial'
+import Stats from 'stats-gl'
 
 /**
  * Base
@@ -31,6 +32,21 @@ const uvCheckerTexture = textureLoader.load('./uvCheckerByValle.jpg')
 uvCheckerTexture.colorSpace = THREE.SRGBColorSpace
 uvCheckerTexture.wrapS = THREE.RepeatWrapping
 uvCheckerTexture.wrapT = THREE.RepeatWrapping
+
+/**
+ * Stats
+ */
+const stats = new Stats({
+    logsPerSecond: 20, 
+    samplesLog: 100, 
+    samplesGraph: 10, 
+    precision: 2, 
+    horizontal: true,
+    minimal: false, 
+    mode: 2
+});
+
+document.body.appendChild( stats.dom );
 
 /**
  * TSL functions
@@ -374,8 +390,12 @@ const tick = () =>
     controls.update()
 
     // Render
+    stats.begin()
     postProcessing.renderAsync()
     // renderer.renderAsync(scene, camera)
+    stats.end()
+
+    stats.update()
 
     // Call tick again on the next frame
     window.requestAnimationFrame(tick)

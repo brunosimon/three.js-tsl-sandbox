@@ -1,11 +1,9 @@
-import * as THREE from 'three'
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
+import * as THREE from 'three/webgpu'
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import GUI from 'lil-gui'
-import WebGPURenderer from 'three/examples/jsm/renderers/webgpu/WebGPURenderer.js'
-import { If, MeshStandardNodeMaterial, SpriteNodeMaterial, float, instanceIndex, min, positionLocal, smoothstep, storage, timerDelta, timerGlobal, tslFn, uint, uniform, uv, vec3, vec4 } from 'three/examples/jsm/nodes/Nodes.js'
+import { If, float, instanceIndex, min, smoothstep, storage, timerDelta, timerGlobal, tslFn, uint, uniform, uv, vec3, vec4 } from 'three/webgpu'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js'
-import StorageInstancedBufferAttribute from 'three/examples/jsm/renderers/common/StorageInstancedBufferAttribute.js'
 import { simplexNoise4d } from './tsl/simplexNoise4d.js'
 import { simplexNoise3d } from './tsl/simplexNoise3d.js'
 import { curlNoise3d } from './tsl/curlNoise3d.js'
@@ -68,7 +66,7 @@ controls.enableDamping = true
 /**
  * Renderer
  */
-const renderer = new WebGPURenderer({
+const renderer = new THREE.WebGPURenderer({
     canvas: canvas
 })
 renderer.setSize(sizes.width, sizes.height)
@@ -105,14 +103,14 @@ baseGeometry.colorAttribute = baseGeometry.instance.attributes.color
 baseGeometry.count = baseGeometry.instance.attributes.position.count
 
 // Material
-const material = new SpriteNodeMaterial()
+const material = new THREE.SpriteNodeMaterial()
 
 // Buffers
-const basePositionBuffer = storage(new StorageInstancedBufferAttribute(baseGeometry.positionAttribute.array, 3), 'vec3', baseGeometry.count)
-const colorBuffer = storage(new StorageInstancedBufferAttribute(baseGeometry.colorAttribute.array, 4), 'vec4', baseGeometry.count)
-const positionBuffer = storage(new StorageInstancedBufferAttribute(baseGeometry.count, 3), 'vec3', baseGeometry.count)
-const lifeBuffer = storage(new StorageInstancedBufferAttribute(baseGeometry.count, 1), 'float', baseGeometry.count)
-const strengthBuffer = storage(new StorageInstancedBufferAttribute(baseGeometry.count, 1), 'float', baseGeometry.count)
+const basePositionBuffer = storage(new THREE.StorageInstancedBufferAttribute(baseGeometry.positionAttribute.array, 3), 'vec3', baseGeometry.count)
+const colorBuffer = storage(new THREE.StorageInstancedBufferAttribute(baseGeometry.colorAttribute.array, 4), 'vec4', baseGeometry.count)
+const positionBuffer = storage(new THREE.StorageInstancedBufferAttribute(baseGeometry.count, 3), 'vec3', baseGeometry.count)
+const lifeBuffer = storage(new THREE.StorageInstancedBufferAttribute(baseGeometry.count, 1), 'float', baseGeometry.count)
+const strengthBuffer = storage(new THREE.StorageInstancedBufferAttribute(baseGeometry.count, 1), 'float', baseGeometry.count)
 
 // Uniforms
 const flowFieldPositionFrequency = uniform(0.2)

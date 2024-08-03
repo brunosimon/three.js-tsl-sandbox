@@ -1,5 +1,5 @@
 // Base on https://al-ro.github.io/projects/embers/
-import { EPSILON, cross, tslFn, vec3 } from "three/examples/jsm/nodes/Nodes.js"
+import { EPSILON, cross, tslFn, vec3 } from "three/webgpu"
 import { simplexNoise3d } from './simplexNoise3d.js'
 
 const curlNoise3d = tslFn(([ inputA ]) =>

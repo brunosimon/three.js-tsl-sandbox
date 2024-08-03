@@ -1,7 +1,7 @@
 // Base on https://al-ro.github.io/projects/embers/
 // Added a 4th dimension
 
-import { EPSILON, cross, tslFn, vec3, vec4 } from "three/examples/jsm/nodes/Nodes.js"
+import { EPSILON, cross, tslFn, vec3, vec4 } from "three/webgpu"
 import { simplexNoise4d } from './simplexNoise4d.js'
 
 const curlNoise4d = tslFn(([ inputA ]) =>
