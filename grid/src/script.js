@@ -1,6 +1,6 @@
 import GUI from 'lil-gui'
-import * as THREE from 'three/webgpu'
-import { float, clamp, smoothstep, min, uv, If, color, tslFn, uniform, vec3, vec4, positionWorld, vec2, normalWorld, mix, max, rangeFog } from 'three/webgpu'
+import * as THREE from 'three'
+import { color, uniform, rangeFog } from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import MeshGridMaterial, { MeshGridMaterialLine } from './MeshGridMaterial.js'
@@ -98,8 +98,8 @@ gui
  * Material
  */
 const lines = [
-    new MeshGridMaterialLine('#444444', 0.1, 0.04),
-    new MeshGridMaterialLine('#705df2', 1, 0.02),
+    new MeshGridMaterialLine('#444444', 0.1, 0.04, 0.25),
+    new MeshGridMaterialLine('#705df2', 1, 0.02, 0.75),
     new MeshGridMaterialLine('#ffffff', 10, 0.002),
 ]
 
@@ -141,6 +141,7 @@ for(const line of worldGridMaterial.lines)
     lineGui.add(line.thickness, 'value', 0, 1, 0.001).name('thickness')
     lineGui.add(line.offset.value, 'x', 0, 1, 0.001).name('offsetX')
     lineGui.add(line.offset.value, 'y', 0, 1, 0.001).name('offsetY')
+    lineGui.add(line.cross, 'value', 0, 1, 0.001).name('cross')
     lineGui.addColor({ color: line.color.value.getHexString(THREE.SRGBColorSpace) }, 'color').onChange((value) => { line.color.value.set(value) }).name('colorBack')
 }
 

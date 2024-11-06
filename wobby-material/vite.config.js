@@ -20,4 +20,14 @@ export default {
         restart({ restart: [ '../static/**', ] }), // Restart server on static file change
         topLevelAwait()
     ],
+    resolve:
+    {
+        alias:
+        {
+            'three/examples/jsm': 'three/examples/jsm',
+            'three/addons': 'three/examples/jsm',
+            'three/tsl': 'three/webgpu',
+            'three': 'three/webgpu',
+        }
+    }
 }
