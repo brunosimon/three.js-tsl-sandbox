@@ -2,7 +2,7 @@ import GUI from 'lil-gui'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
-import { MeshBasicNodeMaterial, mix, mul, positionLocal, smoothstep, texture, timerGlobal, tslFn, uv, vec2, vec3, vec4 } from 'three/examples/jsm/nodes/Nodes.js'
+import { MeshBasicNodeMaterial, mix, mul, positionLocal, smoothstep, texture, timerGlobal, oneMinus, tslFn, uv, vec2, vec3, vec4 } from 'three/examples/jsm/nodes/Nodes.js'
 import WebGPURenderer from 'three/examples/jsm/renderers/webgpu/WebGPURenderer.js'
 
 /**
@@ -71,9 +71,9 @@ smokeMaterial.colorNode = tslFn(() =>
     const alpha = mul(
         texture(noiseTexture, alphaNoiseUv).r.smoothstep(0.4, 1),
         smoothstep(0, 0.1, uv().x),
-        smoothstep(1, 0.9, uv().x),
+        smoothstep(0, 0.1, oneMinus(uv().x)),
         smoothstep(0, 0.1, uv().y),
-        smoothstep(1, 0.9, uv().y)
+        smoothstep(0, 0.1, oneMinus(uv().y))
     )
     const finalColor = mix(vec3(0.6, 0.3, 0.2), vec3(1, 1, 1), alpha.pow(3))
 
